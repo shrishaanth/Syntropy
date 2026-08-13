@@ -2,7 +2,6 @@
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Tests](https://img.shields.io/badge/tests-15%20passing-green)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 **A point-in-time quantitative pipeline that estimates time-varying risk via EWMA, allocates capital through a from-scratch Hierarchical Risk Parity (HRP) engine, and validates performance via walk-forward backtesting with provable zero future-data leakage. Outputs an interactive Streamlit dashboard for real-time strategy benchmarking.**
 
@@ -185,7 +184,3 @@ Inverse Variance Sharpe: 0.699
 - [Architecture](ARCHITECTURE.md) — component diagram, data flow, design decisions
 - [Testing](TESTING.md) — how to run tests, interpreting metrics
 - [Decisions](DECISIONS.md) — architectural decision log
-
-## License
-
-MIT
