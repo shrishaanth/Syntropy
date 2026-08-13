@@ -2,8 +2,13 @@
 import pandas as pd
 import numpy as np
 from typing import List, Tuple
-from .hrp import HierarchicalRiskParity
-from .utils import clean_data, to_log_returns
+
+from .utils import to_log_returns
+from ..features import ewma_vol, ewmc_corr
+from ..covariance import build_covariance, psd_repair
+from ..hrp import allocate
+from config import Config
+
 
 class Strategy:
     """
@@ -11,94 +16,67 @@ class Strategy:
     """
 
     def __init__(self,
-                 train_window: int = 252, # Approx 1 year of trading days
-                 test_window: int = 63,   # Approx 3 months (quarterly rebalancing)
-                 transaction_cost: float = 0.0005, # 5 bps
-                 benchmarks: List[str] = ['SPY']):
-        """
-        Initializes the backtesting strategy.
-
-        Args:
-            train_window: Number of days in the training window for risk estimation.
-            test_window: Number of days in the testing window for each rebalancing period.
-            transaction_cost: Estimated cost per trade as a fraction of the trade value.
-            benchmarks: List of benchmark ticker symbols.
-        """
+                 train_window: int = 252,
+                 test_window: int = 63,
+                 transaction_cost: float = 0.0005,
+                 benchmarks: List[str] = None):
         self.train_window = train_window
         self.test_window = test_window
         self.transaction_cost = transaction_cost
-        self.benchmarks = benchmarks
+        self.benchmarks = benchmarks or ['SPY']
+        self.config = Config()
 
     def run(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Runs the walk-forward backtest.
+        asset_prices = data.drop(columns=self.benchmarks, errors='ignore')
+        benchmark_prices = data[self.benchmarks] if all(b in data.columns for b in self.benchmarks) else None
 
-        Args:
-            data: DataFrame of prices for the assets (including benchmarks).
+        returns_df = to_log_returns(asset_prices)
+        benchmark_returns = to_log_returns(benchmark_prices) if benchmark_prices is not None else pd.DataFrame()
 
-        Returns:
-            A tuple (backtest_results, weight_history) where:
-            - backtest_results: DataFrame with daily returns for the strategy and benchmarks.
-            - weight_history: DataFrame tracking portfolio weights over time.
-        """
-        # 1. Prepare data (clean and convert to returns)
-        asset_prices = data.drop(columns=self.benchmarks)
-        benchmark_prices = data[self.benchmarks]
-
-        returns = to_log_returns(asset_prices)
-        benchmark_returns = to_log_returns(benchmark_prices)
-
-        n_steps = len(returns)
+        n_steps = len(returns_df)
         start_idx = self.train_window
 
-        # Containers for results
         strategy_returns = []
         weight_history = []
         current_weights = None
 
-        # 2. Walk-forward logic
         for i in range(start_idx, n_steps, self.test_window):
-            # Define current train/test windows
-            train_data = returns.iloc[i - self.train_window : i]
+            train_data = returns_df.iloc[i - self.train_window : i]
             test_end_idx = min(i + self.test_window, n_steps)
-            test_data = returns.iloc[i : test_end_idx]
+            test_data = returns_df.iloc[i : test_end_idx]
 
-            # A. Rebalance: Compute new weights using HRP on training data
-            optimizer = HierarchicalRiskParity()
-            new_weights, _ = optimizer.optimize_portfolio(train_data)
+            vol = ewma_vol(train_data, span=self.config.ewma_span)
+            corr = ewmc_corr(train_data, span=self.config.corr_span)
+            cov = build_covariance(vol, corr)
+            cov = psd_repair(cov)
 
-            # B. Apply transaction costs on the rebalance
+            new_weights = pd.Series(allocate(cov, corr, self.config))
+
             cost_drag = 0
             if current_weights is not None:
-                # Delta weight is the change in position
                 delta_weights = np.abs(new_weights - current_weights)
                 cost_drag = np.sum(delta_weights) * self.transaction_cost
 
             current_weights = new_weights
 
-            # C. Record weights
-            rebalance_date = returns.index[i]
+            rebalance_date = returns_df.index[i]
             weight_history.append(pd.Series(current_weights, index=asset_prices.columns, name=rebalance_date))
 
-            # D. Compute test returns (out-of-sample)
-            # Strategy return = dot product of weights and returns
-            period_returns = test_data.dot(current_weights)
+            period_returns = test_data.dot(pd.Series(current_weights))
 
-            # Subtract cost drag from the first return of the test period
             if len(period_returns) > 0:
                 period_returns.iloc[0] -= cost_drag
 
             strategy_returns.append(period_returns)
 
-        # 3. Concatenate and finalize results
         strategy_series = pd.concat(strategy_returns)
         strategy_series.name = 'Strategy'
 
-        # Sync benchmark returns to match the backtest period
-        benchmark_series = benchmark_returns.reindex(strategy_series.index)
+        if not benchmark_returns.empty:
+            benchmark_series = benchmark_returns.reindex(strategy_series.index)
+            results = pd.concat([strategy_series, benchmark_series], axis=1)
+        else:
+            results = pd.DataFrame({'Strategy': strategy_series})
 
-        # Combine results
-        results = pd.concat([strategy_series, benchmark_series], axis=1)
         weights_df = pd.DataFrame(weight_history)
-
         return results, weights_df
