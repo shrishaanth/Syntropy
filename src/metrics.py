@@ -14,7 +14,7 @@ def sharpe_ratio(returns: pd.Series, risk_free_rate_annual: float) -> float:
 
 def max_drawdown(returns: pd.Series) -> float:
     """Compute max drawdown from returns."""
-    cumulative = (1 + returns).cumprod()
+    cumulative = np.exp(returns.cumsum())
     peak = cumulative.cummax()
     drawdown = (cumulative - peak) / peak
     return drawdown.min()
@@ -50,8 +50,14 @@ def calculate_metrics(
     benchmark_returns: dict[str, pd.Series],
     weights_df: pd.DataFrame,
     config,
+    costs: pd.Series = None,
 ) -> dict:
     """Calculate all performance metrics."""
+    gross_returns = strategy_returns.copy()
+    if costs is not None:
+        costs_aligned = costs.reindex(gross_returns.index).fillna(0)
+        gross_returns = gross_returns + costs_aligned
+
     metrics = {
         "strategy": {
             "sharpe": sharpe_ratio(strategy_returns, config.risk_free_rate_annual),
@@ -59,7 +65,7 @@ def calculate_metrics(
             "annualized_return": annualized_return(strategy_returns),
             "annualized_volatility": annualized_volatility(strategy_returns),
             "turnover": turnover(weights_df),
-            "cost_drag": 0.0,
+            "cost_drag": cost_drag(strategy_returns, gross_returns),
         },
         "config": {
             "symbols": list(config.symbols),

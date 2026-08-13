@@ -1,7 +1,7 @@
 # src/core/backtest.py
 import pandas as pd
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from .utils import to_log_returns
 from ..features import ewma_vol, ewmc_corr
@@ -26,7 +26,7 @@ class Strategy:
         self.benchmarks = benchmarks or ['SPY']
         self.config = Config()
 
-    def run(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def run(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
         asset_prices = data.drop(columns=self.benchmarks, errors='ignore')
         benchmark_prices = data[self.benchmarks] if all(b in data.columns for b in self.benchmarks) else None
 
@@ -38,6 +38,7 @@ class Strategy:
 
         strategy_returns = []
         weight_history = []
+        cost_history = []
         current_weights = None
 
         for i in range(start_idx, n_steps, self.test_window):
@@ -68,6 +69,7 @@ class Strategy:
                 period_returns.iloc[0] -= cost_drag
 
             strategy_returns.append(period_returns)
+            cost_history.append(cost_drag)
 
         strategy_series = pd.concat(strategy_returns)
         strategy_series.name = 'Strategy'
@@ -79,4 +81,5 @@ class Strategy:
             results = pd.DataFrame({'Strategy': strategy_series})
 
         weights_df = pd.DataFrame(weight_history)
-        return results, weights_df
+        costs = pd.Series(cost_history, index=[w.name for w in weight_history])
+        return results, weights_df, costs

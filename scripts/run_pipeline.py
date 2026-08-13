@@ -33,7 +33,7 @@ def main():
         test_window=config.test_months * 21,
         transaction_cost=config.transaction_cost_bps / 10000,
     )
-    results, weights_df = strategy.run(prices)
+    results, weights_df, costs = strategy.run(prices)
     print(f"Strategy returns: {len(results)} days, {len(weights_df)} rebalances")
 
     print("\n[3/4] Computing benchmarks...")
@@ -55,6 +55,7 @@ def main():
         {k: v.dropna() for k, v in benchmark_returns.items()},
         weights_df,
         config,
+        costs=costs,
     )
 
     paths = save_artifacts(results, weights_df, metrics, config)

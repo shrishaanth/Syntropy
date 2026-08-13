@@ -39,8 +39,8 @@ def test_no_lookahead_guarantee():
     cutoff = prices_with_spike.index[350]
 
     strat = Strategy(train_window=60, test_window=20)
-    results_with, _ = strat.run(prices_with_spike.loc[:cutoff])
-    results_without, _ = strat.run(prices_without_spike.loc[:cutoff])
+    results_with, _, _ = strat.run(prices_with_spike.loc[:cutoff])
+    results_without, _, _ = strat.run(prices_without_spike.loc[:cutoff])
 
     pd.testing.assert_series_equal(
         results_with["Strategy"].reset_index(drop=True),
@@ -55,21 +55,23 @@ def test_reproducibility():
     cfg = Config()
 
     strat = Strategy(train_window=60, test_window=20, transaction_cost=0.001)
-    results1, weights1 = strat.run(prices)
+    results1, weights1, costs1 = strat.run(prices)
     metrics1 = calculate_metrics(
-        results1["Strategy"].pct_change().dropna(),
+        results1["Strategy"].dropna(),
         {},
         weights1,
         cfg,
+        costs=costs1,
     )
 
     strat2 = Strategy(train_window=60, test_window=20, transaction_cost=0.001)
-    results2, weights2 = strat2.run(prices)
+    results2, weights2, costs2 = strat2.run(prices)
     metrics2 = calculate_metrics(
-        results2["Strategy"].pct_change().dropna(),
+        results2["Strategy"].dropna(),
         {},
         weights2,
         cfg,
+        costs=costs2,
     )
 
     assert results1["Strategy"].equals(results2["Strategy"])

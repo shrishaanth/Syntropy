@@ -28,7 +28,7 @@ print(f'✅ HRP: weights={weights.sum():.6f}, variance={var:.6f}')
 mock = pd.DataFrame(np.random.randn(252,5).cumsum(axis=0)*10+100, index=pd.date_range('2023-01-01',periods=252), columns=['AAPL','MSFT','NVDA','JPM','XOM'])
 mock['SPY'] = np.random.randn(252).cumsum()*5+100
 strat = Strategy(train_window=126, test_window=63, benchmarks=['SPY'])
-results, weights_df = strat.run(mock)
+results, weights_df, costs = strat.run(mock)
 print(f'✅ Strategy: {len(results)} days, {len(weights_df)} rebalances')
 
 print('\\\\n🎉 Phase 1 COMPLETE - Ready for Phase 2!')

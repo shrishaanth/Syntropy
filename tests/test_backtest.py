@@ -18,10 +18,11 @@ def test_walk_forward_no_nan():
         columns=["A", "B", "C"],
     )
     strat = Strategy(train_window=60, test_window=20)
-    results, weights_df = strat.run(prices)
+    results, weights_df, costs = strat.run(prices)
     assert not results.isna().any().any()
     assert len(results) > 0
     assert len(weights_df) > 0
+    assert len(costs) == len(weights_df)
 
 
 def test_weights_sum_to_one():
@@ -33,7 +34,7 @@ def test_weights_sum_to_one():
         columns=["A", "B", "C"],
     )
     strat = Strategy(train_window=60, test_window=20)
-    _, weights_df = strat.run(prices)
+    _, weights_df, _ = strat.run(prices)
     row_sums = weights_df.sum(axis=1)
     assert np.allclose(row_sums.values, 1.0, atol=1e-6)
 
@@ -47,5 +48,5 @@ def test_window_count():
         columns=["A", "B", "C"],
     )
     strat = Strategy(train_window=60, test_window=20)
-    _, weights_df = strat.run(prices)
+    _, weights_df, _ = strat.run(prices)
     assert len(weights_df) == 10
