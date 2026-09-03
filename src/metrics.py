@@ -73,6 +73,7 @@ def calculate_metrics(
             "end_date": config.end_date.isoformat(),
             "ewma_span": config.ewma_span,
             "corr_span": config.corr_span,
+            "corr_shrinkage": config.corr_shrinkage,
             "train_years": config.train_years,
             "test_months": config.test_months,
             "transaction_cost_bps": config.transaction_cost_bps,

@@ -7,7 +7,7 @@ from src.covariance import build_covariance, psd_repair
 
 
 def _distance_matrix(corr: pd.DataFrame) -> pd.DataFrame:
-    d = np.sqrt(0.5 * (1 - corr.values))
+    d = np.sqrt(np.clip(0.5 * (1 - corr.values), 0.0, None))
     np.fill_diagonal(d, 0.0)
     return pd.DataFrame(d, index=corr.index, columns=corr.index)
 
@@ -33,8 +33,8 @@ def _bisect(cov: np.ndarray, items: list[str]) -> dict[str, float]:
     right_items = items[split:]
     left_idx = list(range(split))
     right_idx = list(range(split, len(items)))
-    var_left = _portfolio_var(cov, left_idx)
-    var_right = _portfolio_var(cov, right_idx)
+    var_left = _cluster_var(cov, left_idx)
+    var_right = _cluster_var(cov, right_idx)
     alloc_left = 1 - var_left / (var_left + var_right)
     w_left = _bisect(cov[np.ix_(left_idx, left_idx)], left_items)
     w_right = _bisect(cov[np.ix_(right_idx, right_idx)], right_items)
@@ -43,35 +43,52 @@ def _bisect(cov: np.ndarray, items: list[str]) -> dict[str, float]:
     }
 
 
-def _portfolio_var(cov: np.ndarray, idx: list[int]) -> float:
-    w = np.ones(len(idx)) / len(idx)
+def _inverse_variance_weights(cov: np.ndarray) -> np.ndarray:
+    ivp = 1.0 / np.diag(cov)
+    return ivp / ivp.sum()
+
+
+def _cluster_var(cov: np.ndarray, idx: list[int]) -> float:
+    """Variance of a cluster held at its inverse-variance weights.
+
+    This is the canonical HRP cluster-variance definition (Lopez de Prado 2016).
+    Weighting the sub-portfolio by inverse variance -- rather than equally --
+    makes the recursive split allocate capital away from the genuinely riskier
+    cluster instead of the one that merely holds more names.
+    """
     sub = cov[np.ix_(idx, idx)]
+    w = _inverse_variance_weights(sub)
     return float(w @ sub @ w)
 
 
 def _clip_constraints(weights: dict[str, float], min_w: float, max_w: float) -> dict[str, float]:
-    for _ in range(10):
-        clipped = {k: np.clip(v, min_w, max_w) for k, v in weights.items()}
-        excess = sum(clipped.values()) - 1.0
-        if abs(excess) < 1e-8:
-            return clipped
-        if excess > 0:
-            for k in weights:
-                if clipped[k] < max_w:
-                    room = max_w - clipped[k]
-                    take = min(room, excess)
-                    clipped[k] += take
-                    excess -= take
+    """Project weights onto the box [min_w, max_w] while keeping the sum at 1.0.
+
+    Each pass clips to the box, then spreads the leftover residual across the
+    names that still have headroom in the required direction, proportionally to
+    how much headroom each has. Repeating the pass lets a name that hits a bound
+    hand its share to the others. If the box itself is infeasible (for example
+    ``n * max_w < 1``) the loop converges to the clipped weights and the caller's
+    final renormalisation takes over.
+    """
+    w = {k: float(v) for k, v in weights.items()}
+    for _ in range(50):
+        w = {k: float(np.clip(v, min_w, max_w)) for k, v in w.items()}
+        residual = 1.0 - sum(w.values())
+        if abs(residual) < 1e-12:
+            return w
+        if residual > 0:
+            headroom = {k: max_w - v for k, v in w.items() if v < max_w}
         else:
-            deficit = -excess
-            for k in weights:
-                if clipped[k] > min_w:
-                    room = clipped[k] - min_w
-                    give = min(room, deficit)
-                    clipped[k] -= give
-                    deficit -= give
-        weights = clipped
-    return weights
+            headroom = {k: v - min_w for k, v in w.items() if v > min_w}
+        total_headroom = sum(headroom.values())
+        if total_headroom <= 1e-15:
+            break
+        for k, room in headroom.items():
+            w[k] += residual * (room / total_headroom)
+    w = {k: float(np.clip(v, min_w, max_w)) for k, v in w.items()}
+    total = sum(w.values())
+    return {k: v / total for k, v in w.items()}
 
 
 def allocate(cov: pd.DataFrame, corr: pd.DataFrame, config) -> dict[str, float]:

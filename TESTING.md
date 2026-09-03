@@ -18,9 +18,9 @@
 | File | What it tests |
 |------|---------------|
 | `test_features.py` | Log returns correctness, EWMA vol shape, EWMC correlation bounds |
-| `test_covariance.py` | Covariance assembly math, PSD repair validity |
+| `test_covariance.py` | Covariance assembly math, PSD repair validity, correlation shrinkage toward the constant-correlation target |
 | `test_domain.py` | Weights Pydantic model validation |
-| `test_hrp.py` | HRP weights sum to 1, respect min/max constraints |
+| `test_hrp.py` | HRP weights sum to 1, respect min/max constraints, inverse-variance cluster variance, constraint projection (cap / floor / infeasible box) |
 | `test_backtest.py` | Walk-forward produces no NaN, weights sum to 1, window count correct |
 | `test_benchmarks.py` | Equal-weight and inverse-variance allocations |
 | `test_lookahead.py` | **Critical**: no future data leakage, reproducibility |

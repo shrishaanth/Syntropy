@@ -1,7 +1,7 @@
 # Syntropy
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![Tests](https://img.shields.io/badge/tests-15%20passing-green)
+![Tests](https://img.shields.io/badge/tests-23%20passing-green)
 
 **A point-in-time quantitative pipeline that estimates time-varying risk via EWMA, allocates capital through a from-scratch Hierarchical Risk Parity (HRP) engine, and validates performance via walk-forward backtesting with provable zero future-data leakage. Outputs an interactive Streamlit dashboard for real-time strategy benchmarking.**
 
@@ -134,14 +134,14 @@ Computes point-in-time features:
 - **EWMC correlation**: exponentially weighted moving correlation matrix
 
 ### 3. Covariance Assembly
-Combines volatility and correlation into `Σ = D^{1/2} R D^{1/2}`. If the matrix is not positive semidefinite, eigenvalues are clipped and the matrix is reconstructed.
+Shrinks the correlation matrix toward a constant-correlation target (`corr_shrinkage`), then combines volatility and correlation into `Σ = D^{1/2} R D^{1/2}`. If the matrix is not positive semidefinite, eigenvalues are clipped and the matrix is reconstructed.
 
 ### 4. HRP Allocation
 1. Distance matrix: `d(i,j) = sqrt(0.5 * (1 - ρ(i,j)))`
 2. Single-linkage clustering via SciPy
 3. Quasi-diagonalization to order similar assets adjacently
-4. Recursive bisection: split sorted list in half, allocate capital inversely proportional to cluster variance, recurse
-5. Constraint projection: clip weights to `[min_weight, max_weight]`, redistribute excess, normalize to sum 1.0
+4. Recursive bisection: split sorted list in half, size each side inversely to its inverse-variance-weighted cluster variance, recurse
+5. Constraint projection: clip weights to `[min_weight, max_weight]`, redistribute the residual across names with headroom, normalize to sum 1.0
 
 ### 5. Walk-Forward Backtest
 - Expanding training window from start date
@@ -158,18 +158,21 @@ Combines volatility and correlation into `Σ = D^{1/2} R D^{1/2}`. If the matrix
 ## Example Output
 
 ```
-Strategy Sharpe: 0.672
-Strategy Max DD: -27.67%
-Strategy Ann. Return: 19.27%
-Strategy Ann. Volatility: 22.71%
-Strategy Turnover: 6.35%
-Strategy Cost Drag: 0.38%
+Strategy Sharpe: 0.741
+Strategy Max DD: -22.65%
+Strategy Ann. Return: 18.72%
+Strategy Ann. Volatility: 19.86%
+Strategy Turnover: 15.02%
+Strategy Cost Drag: 0.93%
 
 Equal Weight Sharpe: 0.833
 Inverse Variance Sharpe: 0.699
 ```
 
-*Backtest period: 2020-01-01 to 2025-01-01, symbols: AAPL, MSFT, NVDA, JPM, XOM.*
+*Backtest period: 2020-01-01 to 2025-01-01 (test window starts 2022 after the
+2-year training warm-up), symbols: AAPL, MSFT, NVDA, JPM, XOM. HRP still trails
+equal-weight on Sharpe here — expected on a 5-name universe with little cluster
+structure — but now runs at materially lower volatility and drawdown.*
 
 ## No-Lookahead Guarantee
 
