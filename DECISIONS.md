@@ -72,6 +72,16 @@ absolute weight changes); otherwise it holds the existing book. The band is
 applied to the post-overlay book so both allocation drift and leverage drift
 count toward the trade decision.
 
+## Why EMA-Smooth the Allocation but Not the Leverage
+
+With ~18 assets the EWMA covariance is noisy enough that rebalancing straight to
+the raw HRP target churned the whole book every period (~20% turnover, ~4% cost
+drag). Smoothing the *desired allocation* with an EMA (`weight_smoothing`) cut
+that to ~4.5% turnover with no loss of return. The *leverage* is deliberately
+left unsmoothed: a parameter sweep showed smoothing it makes the strategy slow
+to de-risk into volatility spikes, which widened the max drawdown from ~17% to
+~28%. Allocation should be sticky; risk scaling should be responsive.
+
 ## Why a 10-Year Sample
 
 A single 2020-2025 window put the entire walk-forward test inside the 2022 rate

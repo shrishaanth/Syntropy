@@ -21,7 +21,7 @@
 | `test_covariance.py` | Covariance assembly math, PSD repair validity, correlation shrinkage toward the constant-correlation target |
 | `test_domain.py` | Weights Pydantic model validation |
 | `test_hrp.py` | HRP weights sum to 1, respect min/max constraints, inverse-variance cluster variance, constraint projection (cap / floor / infeasible box) |
-| `test_backtest.py` | Walk-forward produces no NaN, weights sum to 1, window count correct, vol-target overlay caps exposure, banded rebalancing cuts turnover |
+| `test_backtest.py` | Walk-forward produces no NaN, weights sum to 1, window count correct, vol-target overlay caps exposure, banded rebalancing + EMA target smoothing cut turnover |
 | `test_benchmarks.py` | Equal-weight and inverse-variance allocations |
 | `test_lookahead.py` | **Critical**: no future data leakage, reproducibility |
 

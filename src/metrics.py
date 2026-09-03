@@ -80,6 +80,8 @@ def calculate_metrics(
             "vol_target_annual": config.vol_target_annual,
             "max_leverage": config.max_leverage,
             "rebalance_band": config.rebalance_band,
+            "weight_smoothing": config.weight_smoothing,
+            "leverage_smoothing": config.leverage_smoothing,
         },
     }
 
