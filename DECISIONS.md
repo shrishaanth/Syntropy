@@ -46,6 +46,39 @@ reproducible, consistent with the "single-pass, no convergence checks" rationale
 for EWMA over GARCH. On the 5-asset demo universe the effect is near-neutral; it
 matters once the universe is widened enough to have real cluster structure.
 
+## Why a Diversified Cross-Asset Universe
+
+HRP earns its keep when the correlation matrix has genuine block structure. Five
+correlated US large-caps gave it almost nothing to cluster, so it degenerated
+toward equal weight and then lost to it on estimation noise. The universe is now
+~18 names spanning equity sectors plus treasuries, gold, and REITs, which is
+where the clustering and recursive bisection actually change the allocation.
+
+## Why a Volatility-Target Overlay
+
+HRP equalises *risk contribution* but says nothing about the portfolio's total
+risk level, which drifts with the market. A post-allocation overlay scales
+exposure toward a constant `vol_target_annual` (capped at `max_leverage`), with
+the remainder in cash at the risk-free rate. This makes drawdown and
+cross-strategy Sharpe comparisons meaningful and is the standard risk-parity
+construction. It is deliberately a separate, legible step rather than folded into
+the allocator.
+
+## Why Banded Rebalancing
+
+Rebalancing to target every period pays transaction costs on noise. The engine
+now only trades when the target book has drifted past `rebalance_band` (sum of
+absolute weight changes); otherwise it holds the existing book. The band is
+applied to the post-overlay book so both allocation drift and leverage drift
+count toward the trade decision.
+
+## Why a 10-Year Sample
+
+A single 2020-2025 window put the entire walk-forward test inside the 2022 rate
+shock, which is the worst possible regime for a bond-inclusive risk-parity book.
+Starting in 2015 spans the 2018 selloff, the COVID crash, 2022, and the
+recoveries, so the reported metrics reflect several regimes rather than one.
+
 ## Why Frozen Config
 
 Eliminates scattered magic numbers, prevents accidental mutation mid-run, and makes the pipeline reproducible — the config object can be serialized into the metrics log.

@@ -4,8 +4,24 @@ from datetime import date
 
 @dataclass(frozen=True)
 class Config:
-    symbols: tuple[str, ...] = ("AAPL", "MSFT", "NVDA", "JPM", "XOM")
-    start_date: date = date(2020, 1, 1)
+    # Diversified cross-sector / cross-asset-class universe so the HRP clustering
+    # has real structure to exploit (equities by sector, plus treasuries, gold,
+    # and REITs).
+    symbols: tuple[str, ...] = (
+        "AAPL", "MSFT", "NVDA", "GOOGL",   # technology
+        "JPM", "GS",                        # financials
+        "XOM", "CVX",                       # energy
+        "JNJ", "UNH",                       # health care
+        "PG", "KO",                         # consumer staples
+        "CAT",                              # industrials
+        "NEE",                              # utilities
+        "TLT", "IEF",                       # US treasuries (long / intermediate)
+        "GLD",                              # gold
+        "VNQ",                              # REITs
+    )
+    # A long sample so the walk-forward test spans several regimes (2018 selloff,
+    # COVID crash, 2022 rate shock, recoveries) rather than a single window.
+    start_date: date = date(2015, 1, 1)
     end_date: date = date(2025, 1, 1)
     ewma_span: int = 60
     corr_span: int = 60
@@ -18,3 +34,10 @@ class Config:
     max_asset_weight: float = 0.30
     min_asset_weight: float = 0.02
     risk_free_rate_annual: float = 0.04
+    # Volatility-target overlay: scale total exposure toward this annualised vol,
+    # capped at max_leverage. Set vol_target_annual = 0 to disable.
+    vol_target_annual: float = 0.10
+    max_leverage: float = 2.0
+    # Banded rebalancing: only trade when the target book has drifted by more than
+    # this (sum of absolute weight changes). Set to 0 to rebalance every period.
+    rebalance_band: float = 0.05

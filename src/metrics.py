@@ -77,6 +77,9 @@ def calculate_metrics(
             "train_years": config.train_years,
             "test_months": config.test_months,
             "transaction_cost_bps": config.transaction_cost_bps,
+            "vol_target_annual": config.vol_target_annual,
+            "max_leverage": config.max_leverage,
+            "rebalance_band": config.rebalance_band,
         },
     }
 
