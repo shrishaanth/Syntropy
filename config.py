@@ -9,6 +9,7 @@ class Config:
     end_date: date = date(2025, 1, 1)
     ewma_span: int = 60
     corr_span: int = 60
+    corr_shrinkage: float = 0.10
     train_years: int = 2
     test_months: int = 1
     step_months: int = 1

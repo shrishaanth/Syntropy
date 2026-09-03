@@ -5,7 +5,7 @@ from typing import List, Tuple, Optional
 
 from .utils import to_log_returns
 from ..features import ewma_vol, ewmc_corr
-from ..covariance import build_covariance, psd_repair
+from ..covariance import build_covariance, psd_repair, shrink_correlation
 from ..hrp import allocate
 from config import Config
 
@@ -48,6 +48,7 @@ class Strategy:
 
             vol = ewma_vol(train_data, span=self.config.ewma_span)
             corr = ewmc_corr(train_data, span=self.config.corr_span)
+            corr = shrink_correlation(corr, self.config.corr_shrinkage)
             cov = build_covariance(vol, corr)
             cov = psd_repair(cov)
 

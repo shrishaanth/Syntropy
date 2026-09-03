@@ -2,6 +2,31 @@ import numpy as np
 import pandas as pd
 
 
+def shrink_correlation(corr: pd.DataFrame, delta: float) -> pd.DataFrame:
+    """Shrink a sample correlation matrix toward a constant-correlation target.
+
+    The target has 1.0 on the diagonal and the mean off-diagonal correlation
+    everywhere else. ``delta`` is the shrinkage intensity in [0, 1]: 0 leaves the
+    sample matrix untouched, 1 replaces it entirely with the target. Shrinkage
+    stabilises the noisy EWMA estimate on a small asset universe, which in turn
+    reduces HRP's turnover.
+    """
+    if delta <= 0.0:
+        return corr
+    delta = min(delta, 1.0)
+
+    n = corr.shape[0]
+    off_diag = corr.values[~np.eye(n, dtype=bool)]
+    mean_corr = off_diag.mean() if off_diag.size else 0.0
+
+    target = np.full((n, n), mean_corr)
+    np.fill_diagonal(target, 1.0)
+
+    shrunk = (1.0 - delta) * corr.values + delta * target
+    np.fill_diagonal(shrunk, 1.0)
+    return pd.DataFrame(shrunk, index=corr.index, columns=corr.columns)
+
+
 def build_covariance(vol: pd.Series, corr: pd.DataFrame) -> pd.DataFrame:
     """Assemble covariance matrix from volatility and correlation."""
     cov = np.outer(vol, vol) * corr.values

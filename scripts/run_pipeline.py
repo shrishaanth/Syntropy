@@ -58,7 +58,13 @@ def main():
         costs=costs,
     )
 
-    paths = save_artifacts(results, weights_df, metrics, config)
+    # Persist benchmark return series alongside the strategy so the dashboard can
+    # plot relative performance instead of the strategy in a vacuum.
+    results_to_save = results.copy()
+    for name, series in benchmark_returns.items():
+        results_to_save[name] = series.reindex(results_to_save.index)
+
+    paths = save_artifacts(results_to_save, weights_df, metrics, config)
 
     print("\n" + "=" * 60)
     print("PIPELINE COMPLETE")

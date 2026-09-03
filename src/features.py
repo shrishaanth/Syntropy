@@ -18,4 +18,8 @@ def ewmc_corr(returns: pd.DataFrame, span: int) -> pd.DataFrame:
     corr = returns.ewm(span=span, adjust=False).corr().iloc[-len(returns.columns) :]
     corr.index = returns.columns
     corr.columns = returns.columns
+    # Guard against floating-point drift outside [-1, 1] before it propagates
+    # into the HRP distance matrix (sqrt of a negative -> NaN).
+    corr = corr.clip(-1.0, 1.0)
+    np.fill_diagonal(corr.values, 1.0)
     return corr
