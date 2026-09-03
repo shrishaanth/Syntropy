@@ -9,7 +9,7 @@ from dataclasses import replace
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.core.backtest import Strategy
-from src.metrics import annualized_volatility
+from src.metrics import annualized_volatility, turnover
 
 
 def _synthetic_prices(n=252, k=3, seed=42):
@@ -96,3 +96,31 @@ def test_banded_rebalancing_cuts_turnover_and_cost():
     # rebalance row carried forward unchanged.
     assert costs_banded.sum() <= costs_every.sum()
     assert (w_banded.diff().iloc[1:].abs().sum(axis=1) < 1e-12).any()
+
+
+def test_weight_smoothing_reduces_turnover():
+    # Assets with distinct, regime-shifting volatilities so the HRP weights
+    # genuinely move period to period (an equal-vol universe would sit at equal
+    # weight forever and turnover would be zero for both runs).
+    n, k = 400, 5
+    rng = np.random.default_rng(3)
+    sigma = np.array([0.4, 0.8, 1.2, 1.6, 2.0])
+    steps = rng.standard_normal((n, k)) * sigma
+    steps[n // 2 :, ::2] *= 3.0  # vol regime shift for a subset of names
+    prices = pd.DataFrame(
+        steps.cumsum(axis=0) + 500,
+        index=pd.date_range("2022-01-01", periods=n, freq="B"),
+        columns=[chr(ord("A") + i) for i in range(k)],
+    )
+
+    strat_raw = Strategy(train_window=60, test_window=20)
+    strat_raw.config = replace(strat_raw.config, weight_smoothing=1.0, rebalance_band=0.0)
+    _, w_raw, _ = strat_raw.run(prices)
+
+    strat_smooth = Strategy(train_window=60, test_window=20)
+    strat_smooth.config = replace(strat_smooth.config, weight_smoothing=0.2, rebalance_band=0.0)
+    _, w_smooth, _ = strat_smooth.run(prices)
+
+    assert turnover(w_raw) > 0
+    assert turnover(w_smooth) < turnover(w_raw)
+    assert np.allclose(w_smooth.sum(axis=1).values, 1.0, atol=1e-6)

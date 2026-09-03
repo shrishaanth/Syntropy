@@ -1,7 +1,7 @@
 # Syntropy
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![Tests](https://img.shields.io/badge/tests-25%20passing-green)
+![Tests](https://img.shields.io/badge/tests-26%20passing-green)
 
 **A point-in-time quantitative pipeline that estimates time-varying risk via EWMA, allocates capital through a from-scratch Hierarchical Risk Parity (HRP) engine with a volatility-target overlay, and validates performance via walk-forward backtesting with provable zero future-data leakage. Outputs an interactive Streamlit dashboard for strategy benchmarking against equal-weight and inverse-variance baselines.**
 
@@ -14,7 +14,7 @@ Syntropy replaces guesswork with a reproducible, mathematical portfolio allocati
 3. **Estimates** time-varying risk using Exponentially Weighted Moving Average (EWMA) volatility and correlation, with correlation shrinkage
 4. **Allocates** capital using Hierarchical Risk Parity (HRP) — clustering a diversified cross-asset universe by correlation and splitting risk across clusters, no matrix inversion required
 5. **Scales** total exposure toward a constant volatility target (capped leverage), holding the balance in cash at the risk-free rate
-6. **Backtests** with walk-forward validation, expanding training windows, 1-day execution lag, banded rebalancing, and transaction costs
+6. **Backtests** with walk-forward validation, expanding training windows, 1-day execution lag, EMA-smoothed targets, banded rebalancing, and transaction costs
 7. **Benchmarks** against equal-weight and inverse-variance strategies
 8. **Exports** metrics (Sharpe, max drawdown, turnover, cost drag) and an interactive Streamlit dashboard
 
@@ -155,8 +155,11 @@ levered) at the risk-free rate.
 - Expanding training window from start date
 - Test window advances by configurable step
 - Weights decided at time `t` are applied to returns at `t+1` (execution lag)
-- **Banded rebalancing**: the target book is only traded when it has drifted by
-  more than `rebalance_band` (sum of absolute weight changes)
+- **Target smoothing**: the desired allocation is an EMA toward the raw HRP
+  target (`weight_smoothing`); the leverage is left unsmoothed so it can
+  de-risk quickly when volatility spikes
+- **Banded rebalancing**: the smoothed book is only traded when it has drifted
+  by more than `rebalance_band` (sum of absolute weight changes)
 - Transaction costs deducted on rebalance dates
 
 ### 7. Metrics
@@ -168,20 +171,20 @@ levered) at the risk-free rate.
 ## Example Output
 
 ```
-                    Sharpe   Ann.Return   Ann.Vol   Max DD
-Strategy (HRP+VT)    0.49       9.49%       11.19%   -18.67%
-Equal weight         0.65      13.61%       14.90%   -30.49%
-Inverse variance     0.28       6.23%        7.91%   -16.48%
+                       Sharpe   Ann.Return   Ann.Vol   Max DD
+Strategy (HRP+VT+EMA)    0.56      10.12%       10.91%   -17.44%
+Equal weight            0.65      13.61%       14.90%   -30.49%
+Inverse variance        0.28       6.23%        7.91%   -16.48%
 
-Strategy turnover: 19.53%    Strategy cost drag: 4.13%
+Strategy turnover: 4.48%    Strategy cost drag: 1.80%
 ```
 
 *Backtest period: 2015-01-01 to 2025-01-01 (test window runs 2017-2024 after the
 2-year training warm-up), 18-asset cross-sector / cross-asset-class universe.
-The strategy beats inverse variance outright and gives up Sharpe to equal weight
-in exchange for a ~40% smaller max drawdown and lower volatility — the intended
-risk-parity trade-off. Turnover and cost drag are dominated by re-levering the
-vol-target overlay each period; damping that is the next lever.*
+The strategy beats inverse variance outright and gives up ~0.09 of Sharpe to
+equal weight in exchange for a ~43% smaller max drawdown and ~4 points less
+volatility — the intended risk-parity trade-off. Smoothing the HRP target cut
+turnover from ~20% to ~4.5% per rebalance and cost drag from ~4% to <2%.*
 
 ## No-Lookahead Guarantee
 

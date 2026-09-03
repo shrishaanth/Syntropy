@@ -41,12 +41,16 @@ class Strategy:
         vol_target = cfg.vol_target_annual
         max_leverage = cfg.max_leverage
         band = cfg.rebalance_band
+        weight_smoothing = cfg.weight_smoothing
+        leverage_smoothing = cfg.leverage_smoothing
 
         strategy_returns = []
         weight_history = []
         cost_history = []
         hrp_weights = None       # last adopted HRP allocation (sums to 1)
         traded_weights = None    # last adopted book after the vol-target overlay
+        hrp_target = None        # EMA-smoothed desired allocation (sums to 1)
+        leverage_state = None    # EMA-smoothed desired leverage
 
         for i in range(start_idx, n_steps, self.test_window):
             train_data = returns_df.iloc[i - self.train_window : i]
@@ -63,16 +67,36 @@ class Strategy:
                 allocate(cov, corr, cfg), index=asset_prices.columns
             )
 
+            # Smooth the desired allocation toward the raw HRP target so a noisy
+            # covariance estimate does not churn the book every period.
+            if hrp_target is None:
+                hrp_target = candidate_hrp
+            else:
+                hrp_target = (1.0 - weight_smoothing) * hrp_target + weight_smoothing * candidate_hrp
+                hrp_target = hrp_target / hrp_target.sum()
+
             # Volatility-target overlay: scale exposure toward a constant
             # annualised vol (cov is already annualised), capped at max_leverage.
-            leverage = 1.0
+            leverage_raw = 1.0
             if vol_target and vol_target > 0:
                 port_vol = float(
-                    np.sqrt(candidate_hrp.values @ cov.values @ candidate_hrp.values)
+                    np.sqrt(hrp_target.values @ cov.values @ hrp_target.values)
                 )
                 if port_vol > 0:
-                    leverage = min(vol_target / port_vol, max_leverage)
-            candidate_traded = candidate_hrp * leverage
+                    leverage_raw = min(vol_target / port_vol, max_leverage)
+
+            # Optional leverage smoothing. Left off by default (factor 1.0): a
+            # sweep showed a smoothed leverage is slow to de-risk into vol
+            # spikes and widens the max drawdown. Kept configurable.
+            if leverage_state is None:
+                leverage_state = leverage_raw
+            else:
+                leverage_state = (
+                    (1.0 - leverage_smoothing) * leverage_state
+                    + leverage_smoothing * leverage_raw
+                )
+
+            candidate_traded = hrp_target * leverage_state
 
             # Banded rebalancing: only trade when the target book has drifted
             # enough to be worth the transaction cost.
@@ -87,7 +111,7 @@ class Strategy:
                     cost_drag = float(
                         np.abs(candidate_traded - traded_weights).sum()
                     ) * self.transaction_cost
-                hrp_weights = candidate_hrp
+                hrp_weights = hrp_target
                 traded_weights = candidate_traded
 
             rebalance_date = returns_df.index[i]

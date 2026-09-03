@@ -40,4 +40,10 @@ class Config:
     max_leverage: float = 2.0
     # Banded rebalancing: only trade when the target book has drifted by more than
     # this (sum of absolute weight changes). Set to 0 to rebalance every period.
-    rebalance_band: float = 0.05
+    rebalance_band: float = 0.10
+    # EMA blend factors (weight on the newly computed value each period). 1.0 =
+    # no smoothing; lower = stickier. Smoothing the allocation cuts turnover from
+    # a noisy covariance estimate; the leverage is left unsmoothed so it can
+    # de-risk quickly when volatility spikes.
+    weight_smoothing: float = 0.25
+    leverage_smoothing: float = 1.0
