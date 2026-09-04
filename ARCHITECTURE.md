@@ -9,7 +9,7 @@ Config → Ingestion → Features → Covariance → HRP → Backtest → Metric
 | Component | Responsibility |
 |-----------|----------------|
 | `config.py` | Immutable parameter container |
-| `ingestion.py` | Download + validate market data from Yahoo Finance |
+| `ingestion.py` | Download NIFTY 50 (+ gold ETF) prices from Yahoo Finance; drop unusable tickers, validate the rest |
 | `features.py` | Point-in-time returns, EWMA volatility, EWMC correlation |
 | `covariance.py` | Shrink correlation, assemble + repair valid covariance matrices |
 | `hrp.py` | Cluster-based risk-parity allocation with constraints |
@@ -21,7 +21,7 @@ Config → Ingestion → Features → Covariance → HRP → Backtest → Metric
 
 ## Data Flow
 
-1. **Ingestion**: `yfinance.download()` → validated `prices.parquet`
+1. **Ingestion**: `yfinance.download()` (NIFTY 50 `.NS` + gold ETF) → drop tickers without full history → validated `prices.parquet`
 2. **Features**: prices → log returns → EWMA vol → EWMC correlation
 3. **Covariance**: shrink correlation toward constant-correlation target, assemble `Σ = D R D`, repair PSD if needed
 4. **HRP**: distance matrix → linkage → quasi-diagonalize → recursive bisection (inverse-variance cluster variance) → constraint projection → weights sum to 1

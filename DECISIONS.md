@@ -46,13 +46,35 @@ reproducible, consistent with the "single-pass, no convergence checks" rationale
 for EWMA over GARCH. On the 5-asset demo universe the effect is near-neutral; it
 matters once the universe is widened enough to have real cluster structure.
 
-## Why a Diversified Cross-Asset Universe
+## Why the NIFTY 50 (plus a gold ETF)
 
 HRP earns its keep when the correlation matrix has genuine block structure. Five
-correlated US large-caps gave it almost nothing to cluster, so it degenerated
-toward equal weight and then lost to it on estimation noise. The universe is now
-~18 names spanning equity sectors plus treasuries, gold, and REITs, which is
-where the clustering and recursive bisection actually change the allocation.
+correlated large-caps gave it almost nothing to cluster, so it degenerated toward
+equal weight and then lost to it on estimation noise. The universe is now the
+~50 NIFTY 50 constituents (NSE, via Yahoo Finance `.NS` symbols) plus
+`GOLDBEES.NS` as a non-equity diversifier — enough sector breadth (financials,
+IT, energy, autos, pharma, consumer, ...) for the clustering and recursive
+bisection to genuinely change the allocation. Prices are in INR; since returns
+are ratios the currency never enters the maths, and `risk_free_rate_annual` is
+set to 6% as an Indian T-bill proxy.
+
+## Why Auto-Drop Tickers Instead of Failing
+
+A 50-name candidate list over ten years always contains names that listed late,
+were later renamed, or have gappy Yahoo data. `_validate_and_clean` now drops any
+ticker below `min_coverage` or whose history starts more than `start_grace_days`
+after the window opens, logs the reason, aligns the survivors, and only then
+enforces the hard invariants. This keeps the sample long (2015-) at the cost of a
+slightly smaller traded universe.
+
+## Known Limitation: Survivorship Bias
+
+The ticker list is the *current* NIFTY 50 membership applied back to 2015. Firms
+that were in the index then but have since dropped out are absent, and index
+exits are disproportionately poor performers, so the backtest is flattered. A
+point-in-time constituent history (join/leave dates) would remove this; it is out
+of scope. The relative ranking of strategy vs. benchmarks is less affected than
+the absolute numbers, since all three trade the same survivor set.
 
 ## Why a Volatility-Target Overlay
 
@@ -74,10 +96,11 @@ count toward the trade decision.
 
 ## Why EMA-Smooth the Allocation but Not the Leverage
 
-With ~18 assets the EWMA covariance is noisy enough that rebalancing straight to
-the raw HRP target churned the whole book every period (~20% turnover, ~4% cost
-drag). Smoothing the *desired allocation* with an EMA (`weight_smoothing`) cut
-that to ~4.5% turnover with no loss of return. The *leverage* is deliberately
+With a large universe the EWMA covariance is noisy enough that rebalancing
+straight to the raw HRP target churned the whole book every period. Smoothing the
+*desired allocation* with an EMA (`weight_smoothing`) cuts that sharply with no
+loss of return (on the NIFTY universe combined with the wide `rebalance_band` it
+drops turnover to near-zero). The *leverage* is deliberately
 left unsmoothed: a parameter sweep showed smoothing it makes the strategy slow
 to de-risk into volatility spikes, which widened the max drawdown from ~17% to
 ~28%. Allocation should be sticky; risk scaling should be responsive.

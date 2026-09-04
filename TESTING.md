@@ -17,6 +17,7 @@
 
 | File | What it tests |
 |------|---------------|
+| `test_ingestion.py` | Cleaning: keep full-history tickers, drop late-listed / gappy ones, raise when too few survive, reject non-positive prices |
 | `test_features.py` | Log returns correctness, EWMA vol shape, EWMC correlation bounds |
 | `test_covariance.py` | Covariance assembly math, PSD repair validity, correlation shrinkage toward the constant-correlation target |
 | `test_domain.py` | Weights Pydantic model validation |
