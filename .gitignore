@@ -55,3 +55,6 @@ data/outputs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local study materials — not for publishing
+docs/learning/
