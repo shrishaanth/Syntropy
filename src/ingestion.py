@@ -48,11 +48,50 @@ def download_and_save(config: Config) -> Path:
     return processed_path
 
 
-def _validate_and_clean(df: pd.DataFrame) -> pd.DataFrame:
-    """Validate and clean price data."""
-    if df.isna().any().any():
-        missing = df.columns[df.isna().any()].tolist()
-        raise ValueError(f"Missing values detected in symbols: {missing}")
+def _validate_and_clean(
+    df: pd.DataFrame,
+    min_coverage: float = 0.98,
+    start_grace_days: int = 25,
+    min_symbols: int = 5,
+) -> pd.DataFrame:
+    """Drop tickers without usable history over the window, then validate the rest.
+
+    A large candidate universe (e.g. the NIFTY 50) will always contain names that
+    listed after the start date or have gappy data on Yahoo Finance. Rather than
+    failing the whole run, drop those names, align the survivors, and only then
+    enforce the hard invariants.
+    """
+    n_rows = len(df)
+    coverage = df.notna().mean()
+
+    keep, dropped = [], {}
+    for col in df.columns:
+        first = df[col].first_valid_index()
+        if coverage[col] < min_coverage:
+            dropped[col] = f"{coverage[col]:.0%} coverage"
+        elif first is None or df.index.get_loc(first) > start_grace_days:
+            when = "no data" if first is None else f"starts {first.date()}"
+            dropped[col] = when
+        else:
+            keep.append(col)
+
+    if dropped:
+        print(
+            f"  dropped {len(dropped)}/{len(df.columns)} tickers "
+            f"({n_rows} trading days requested): "
+            + ", ".join(f"{k} [{v}]" for k, v in dropped.items())
+        )
+    df = df[keep]
+
+    if len(df.columns) < min_symbols:
+        raise ValueError(
+            f"Only {len(df.columns)} tickers have usable history; need >= {min_symbols}"
+        )
+
+    dropped_rows = len(df)
+    df = df.dropna(axis=0)
+    if len(df) < dropped_rows:
+        print(f"  dropped {dropped_rows - len(df)} rows with residual gaps")
 
     if (df <= 0).any().any():
         raise ValueError("Negative or zero prices detected")

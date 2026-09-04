@@ -1,18 +1,18 @@
 # Syntropy
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![Tests](https://img.shields.io/badge/tests-26%20passing-green)
+![Tests](https://img.shields.io/badge/tests-31%20passing-green)
 
-**A point-in-time quantitative pipeline that estimates time-varying risk via EWMA, allocates capital through a from-scratch Hierarchical Risk Parity (HRP) engine with a volatility-target overlay, and validates performance via walk-forward backtesting with provable zero future-data leakage. Outputs an interactive Streamlit dashboard for strategy benchmarking against equal-weight and inverse-variance baselines.**
+**A point-in-time quantitative pipeline that estimates time-varying risk via EWMA, allocates capital across the NIFTY 50 through a from-scratch Hierarchical Risk Parity (HRP) engine with a volatility-target overlay, and validates performance via walk-forward backtesting with provable zero future-data leakage. Outputs an interactive Streamlit dashboard for strategy benchmarking against equal-weight and inverse-variance baselines.**
 
 ## What It Does
 
 Syntropy replaces guesswork with a reproducible, mathematical portfolio allocation system:
 
-1. **Downloads** adjusted daily prices from Yahoo Finance
-2. **Validates** data quality (no missing values, no negative prices, monotonic dates)
+1. **Downloads** split/dividend-adjusted daily prices from Yahoo Finance for the NIFTY 50 constituents (NSE, `.NS`) plus a gold ETF
+2. **Validates** data quality — drops tickers without usable history over the window, then enforces no missing values / no negative prices / monotonic dates on the rest
 3. **Estimates** time-varying risk using Exponentially Weighted Moving Average (EWMA) volatility and correlation, with correlation shrinkage
-4. **Allocates** capital using Hierarchical Risk Parity (HRP) — clustering a diversified cross-asset universe by correlation and splitting risk across clusters, no matrix inversion required
+4. **Allocates** capital using Hierarchical Risk Parity (HRP) — clustering the ~49-name universe by correlation and splitting risk across clusters, no matrix inversion required
 5. **Scales** total exposure toward a constant volatility target (capped leverage), holding the balance in cash at the risk-free rate
 6. **Backtests** with walk-forward validation, expanding training windows, 1-day execution lag, EMA-smoothed targets, banded rebalancing, and transaction costs
 7. **Benchmarks** against equal-weight and inverse-variance strategies
@@ -28,7 +28,7 @@ Human investors guess allocations based on intuition, leading to concentration r
 - **Point-in-time correctness** — every feature uses only data available at its decision timestamp
 - **Reproducible** — same config + same data = identical output
 - **Volatility targeting** — post-allocation overlay scales exposure to a constant risk budget with capped leverage
-- **Fast** — full pipeline on 18 assets × 10 years runs in well under a minute
+- **Fast** — full pipeline on ~49 assets × 10 years runs in well under a minute
 - **Portable** — single virtual environment, 8 core dependencies, runs on any machine
 
 ## Tech Stack
@@ -127,7 +127,7 @@ data/
 ## How It Works
 
 ### 1. Ingestion
-Downloads adjusted close prices via `yfinance`, validates no missing/negative values, and saves immutable Parquet.
+Downloads split/dividend-adjusted close prices via `yfinance` for the candidate universe in `config.py`. Tickers without usable history over the window (late listings, delisted symbols, gappy data) are dropped with a logged reason; the survivors are checked for missing/negative values and saved as immutable Parquet.
 
 ### 2. Feature Engineering
 Computes point-in-time features:
@@ -172,19 +172,27 @@ levered) at the risk-free rate.
 
 ```
                        Sharpe   Ann.Return   Ann.Vol   Max DD
-Strategy (HRP+VT+EMA)    0.56      10.12%       10.91%   -17.44%
-Equal weight            0.65      13.61%       14.90%   -30.49%
-Inverse variance        0.28       6.23%        7.91%   -16.48%
+Strategy (HRP+VT+EMA)    0.79      15.11%       11.53%   -13.62%
+Equal weight            0.56      15.51%       17.03%   -38.00%
+Inverse variance        0.58      14.99%       15.59%   -35.49%
 
-Strategy turnover: 4.48%    Strategy cost drag: 1.80%
+Strategy turnover: 0.25%    Strategy cost drag: 0.55%
 ```
 
 *Backtest period: 2015-01-01 to 2025-01-01 (test window runs 2017-2024 after the
-2-year training warm-up), 18-asset cross-sector / cross-asset-class universe.
-The strategy beats inverse variance outright and gives up ~0.09 of Sharpe to
-equal weight in exchange for a ~43% smaller max drawdown and ~4 points less
-volatility — the intended risk-parity trade-off. Smoothing the HRP target cut
-turnover from ~20% to ~4.5% per rebalance and cost drag from ~4% to <2%.*
+2-year training warm-up). Universe: NIFTY 50 constituents (NSE, `.NS`) plus
+`GOLDBEES.NS`; ~49 traded after auto-dropping names without full history. Prices
+in INR — returns are ratios, so currency is irrelevant. `risk_free_rate_annual`
+is 6% (Indian T-bill proxy). On this broader universe the strategy beats **both**
+benchmarks on Sharpe, at roughly equal return but ~5-6 points less volatility and
+less than half the max drawdown. Turnover is near-zero because the wide
+`rebalance_band` (0.10) rarely fires on a 49-name book — tighten it for a more
+responsive strategy.*
+
+> **Survivorship bias caveat:** the ticker list is the *current* NIFTY 50
+> membership applied back to 2015. Names that were in the index then but dropped
+> out (and later poor performers) are absent, which flatters the backtest. A
+> point-in-time constituent history would fix this; it is out of scope here.
 
 ## No-Lookahead Guarantee
 
