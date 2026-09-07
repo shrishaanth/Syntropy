@@ -49,28 +49,12 @@ def _inverse_variance_weights(cov: np.ndarray) -> np.ndarray:
 
 
 def _cluster_var(cov: np.ndarray, idx: list[int]) -> float:
-    """Variance of a cluster held at its inverse-variance weights.
-
-    This is the canonical HRP cluster-variance definition (Lopez de Prado 2016).
-    Weighting the sub-portfolio by inverse variance -- rather than equally --
-    makes the recursive split allocate capital away from the genuinely riskier
-    cluster instead of the one that merely holds more names.
-    """
     sub = cov[np.ix_(idx, idx)]
     w = _inverse_variance_weights(sub)
     return float(w @ sub @ w)
 
 
 def _clip_constraints(weights: dict[str, float], min_w: float, max_w: float) -> dict[str, float]:
-    """Project weights onto the box [min_w, max_w] while keeping the sum at 1.0.
-
-    Each pass clips to the box, then spreads the leftover residual across the
-    names that still have headroom in the required direction, proportionally to
-    how much headroom each has. Repeating the pass lets a name that hits a bound
-    hand its share to the others. If the box itself is infeasible (for example
-    ``n * max_w < 1``) the loop converges to the clipped weights and the caller's
-    final renormalisation takes over.
-    """
     w = {k: float(v) for k, v in weights.items()}
     for _ in range(50):
         w = {k: float(np.clip(v, min_w, max_w)) for k, v in w.items()}

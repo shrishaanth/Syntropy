@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-"""One-command pipeline entry point."""
 
 import sys
 from pathlib import Path
@@ -58,8 +56,6 @@ def main():
         costs=costs,
     )
 
-    # Persist benchmark return series alongside the strategy so the dashboard can
-    # plot relative performance instead of the strategy in a vacuum.
     results_to_save = results.copy()
     for name, series in benchmark_returns.items():
         results_to_save[name] = series.reindex(results_to_save.index)

@@ -3,14 +3,6 @@ import pandas as pd
 
 
 def shrink_correlation(corr: pd.DataFrame, delta: float) -> pd.DataFrame:
-    """Shrink a sample correlation matrix toward a constant-correlation target.
-
-    The target has 1.0 on the diagonal and the mean off-diagonal correlation
-    everywhere else. ``delta`` is the shrinkage intensity in [0, 1]: 0 leaves the
-    sample matrix untouched, 1 replaces it entirely with the target. Shrinkage
-    stabilises the noisy EWMA estimate on a small asset universe, which in turn
-    reduces HRP's turnover.
-    """
     if delta <= 0.0:
         return corr
     delta = min(delta, 1.0)
@@ -28,13 +20,11 @@ def shrink_correlation(corr: pd.DataFrame, delta: float) -> pd.DataFrame:
 
 
 def build_covariance(vol: pd.Series, corr: pd.DataFrame) -> pd.DataFrame:
-    """Assemble covariance matrix from volatility and correlation."""
     cov = np.outer(vol, vol) * corr.values
     return pd.DataFrame(cov, index=vol.index, columns=vol.index)
 
 
 def psd_repair(cov: pd.DataFrame, epsilon: float = 1e-8) -> pd.DataFrame:
-    """Repair covariance matrix to be positive semidefinite."""
     vals, vecs = np.linalg.eigh(cov.values)
     if (vals >= -epsilon).all():
         return cov

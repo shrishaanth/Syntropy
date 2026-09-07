@@ -28,8 +28,6 @@ def cumulative_returns_figure(results: pd.DataFrame) -> go.Figure:
     fig = go.Figure()
     for col in results.columns:
         series = results[col].dropna()
-        # Returns are daily log returns; compound them as exp(cumsum) to stay
-        # consistent with src/metrics.py.
         cum = np.exp(series.cumsum())
         fig.add_trace(go.Scatter(x=cum.index, y=cum.values, mode="lines", name=col))
     fig.update_layout(title="Cumulative Returns", xaxis_title="Date", yaxis_title="Growth of $1", hovermode="x unified")

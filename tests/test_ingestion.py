@@ -26,7 +26,7 @@ def test_keeps_full_history_columns():
 
 def test_drops_late_listed_ticker():
     df = _frame()
-    df.loc[df.index[:120], "C"] = np.nan  # C "lists" ~120 days in
+    df.loc[df.index[:120], "C"] = np.nan
     out = _validate_and_clean(df, start_grace_days=25)
     assert "C" not in out.columns
     assert {"A", "B", "D", "E", "F"} <= set(out.columns)
@@ -37,14 +37,14 @@ def test_drops_gappy_ticker_below_coverage():
     df = _frame()
     rng = np.random.default_rng(1)
     gap_rows = rng.choice(len(df), size=int(0.1 * len(df)), replace=False)
-    df.iloc[gap_rows, df.columns.get_loc("B")] = np.nan  # 10% missing -> below 0.98
+    df.iloc[gap_rows, df.columns.get_loc("B")] = np.nan
     out = _validate_and_clean(df, min_coverage=0.98)
     assert "B" not in out.columns
 
 
 def test_raises_when_too_few_survive():
     df = _frame()
-    df.loc[df.index[:200], ["B", "C", "D", "E"]] = np.nan  # only A, F keep full history
+    df.loc[df.index[:200], ["B", "C", "D", "E"]] = np.nan
     with pytest.raises(ValueError, match="usable history"):
         _validate_and_clean(df, min_symbols=3)
 

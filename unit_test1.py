@@ -10,7 +10,6 @@ from src.core.backtest import Strategy
 
 print('✅ All modules imported successfully')
 
-# Quick functional test
 np.random.seed(42)
 test_data = pd.DataFrame(np.random.randn(252,5)*100+1000, index=pd.date_range('2023-01-01',periods=252), columns=['AAPL','MSFT','NVDA','JPM','XOM'])
 cleaned = clean_data(test_data)
