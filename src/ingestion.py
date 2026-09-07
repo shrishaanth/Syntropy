@@ -7,15 +7,6 @@ from config import Config
 
 
 def download_and_save(config: Config) -> Path:
-    """
-    Download market data and save to parquet.
-
-    Args:
-        config: Config object with symbols and date range.
-
-    Returns:
-        Path to saved parquet file.
-    """
     import yfinance as yf
 
     raw_path = Path("data/raw") / f"prices_{datetime.now().strftime('%Y%m%d')}.parquet"
@@ -54,13 +45,6 @@ def _validate_and_clean(
     start_grace_days: int = 25,
     min_symbols: int = 5,
 ) -> pd.DataFrame:
-    """Drop tickers without usable history over the window, then validate the rest.
-
-    A large candidate universe (e.g. the NIFTY 50) will always contain names that
-    listed after the start date or have gappy data on Yahoo Finance. Rather than
-    failing the whole run, drop those names, align the survivors, and only then
-    enforce the hard invariants.
-    """
     n_rows = len(df)
     coverage = df.notna().mean()
 

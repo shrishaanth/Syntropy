@@ -3,7 +3,6 @@ import numpy as np
 
 
 def sharpe_ratio(returns: pd.Series, risk_free_rate_annual: float) -> float:
-    """Compute annualized Sharpe ratio."""
     rf_daily = risk_free_rate_annual / 252
     excess = returns - rf_daily
     std = excess.std()
@@ -13,7 +12,6 @@ def sharpe_ratio(returns: pd.Series, risk_free_rate_annual: float) -> float:
 
 
 def max_drawdown(returns: pd.Series) -> float:
-    """Compute max drawdown from returns."""
     cumulative = np.exp(returns.cumsum())
     peak = cumulative.cummax()
     drawdown = (cumulative - peak) / peak
@@ -21,17 +19,14 @@ def max_drawdown(returns: pd.Series) -> float:
 
 
 def annualized_return(returns: pd.Series) -> float:
-    """Compute annualized return."""
     return returns.mean() * 252
 
 
 def annualized_volatility(returns: pd.Series) -> float:
-    """Compute annualized volatility."""
     return returns.std() * np.sqrt(252)
 
 
 def turnover(weights_df: pd.DataFrame) -> float:
-    """Compute average turnover across rebalances."""
     if len(weights_df) < 2:
         return 0.0
     changes = weights_df.diff().abs().iloc[1:]
@@ -39,7 +34,6 @@ def turnover(weights_df: pd.DataFrame) -> float:
 
 
 def cost_drag(strategy_returns: pd.Series, gross_returns: pd.Series) -> float:
-    """Compute cost drag as fraction of gross return."""
     if gross_returns.sum() == 0:
         return 0.0
     return (gross_returns.sum() - strategy_returns.sum()) / gross_returns.sum()
@@ -52,7 +46,6 @@ def calculate_metrics(
     config,
     costs: pd.Series = None,
 ) -> dict:
-    """Calculate all performance metrics."""
     gross_returns = strategy_returns.copy()
     if costs is not None:
         costs_aligned = costs.reindex(gross_returns.index).fillna(0)

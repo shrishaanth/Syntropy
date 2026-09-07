@@ -68,8 +68,6 @@ def test_window_count():
 def test_vol_target_caps_exposure_and_reduces_vol():
     prices = _synthetic_prices(seed=7)
 
-    # Low target + no leverage headroom -> the strategy must sit partly in cash
-    # and realise a lower vol than the fully-invested (targeting-off) version.
     strat_off = Strategy(train_window=60, test_window=20)
     strat_off.config = replace(strat_off.config, vol_target_annual=0.0)
     res_off, _, _ = strat_off.run(prices)
@@ -92,21 +90,16 @@ def test_banded_rebalancing_cuts_turnover_and_cost():
     strat_banded.config = replace(strat_banded.config, rebalance_band=0.5)
     _, w_banded, costs_banded = strat_banded.run(prices)
 
-    # A wide band should suppress trading: lower cumulative cost and at least one
-    # rebalance row carried forward unchanged.
     assert costs_banded.sum() <= costs_every.sum()
     assert (w_banded.diff().iloc[1:].abs().sum(axis=1) < 1e-12).any()
 
 
 def test_weight_smoothing_reduces_turnover():
-    # Assets with distinct, regime-shifting volatilities so the HRP weights
-    # genuinely move period to period (an equal-vol universe would sit at equal
-    # weight forever and turnover would be zero for both runs).
     n, k = 400, 5
     rng = np.random.default_rng(3)
     sigma = np.array([0.4, 0.8, 1.2, 1.6, 2.0])
     steps = rng.standard_normal((n, k)) * sigma
-    steps[n // 2 :, ::2] *= 3.0  # vol regime shift for a subset of names
+    steps[n // 2 :, ::2] *= 3.0
     prices = pd.DataFrame(
         steps.cumsum(axis=0) + 500,
         index=pd.date_range("2022-01-01", periods=n, freq="B"),

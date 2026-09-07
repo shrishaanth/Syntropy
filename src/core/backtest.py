@@ -1,4 +1,3 @@
-# src/core/backtest.py
 import pandas as pd
 import numpy as np
 from typing import List, Tuple, Optional
@@ -11,9 +10,6 @@ from config import Config
 
 
 class Strategy:
-    """
-    Implements a walk-forward backtesting engine for a quantitative portfolio strategy.
-    """
 
     def __init__(self,
                  train_window: int = 252,
@@ -47,10 +43,10 @@ class Strategy:
         strategy_returns = []
         weight_history = []
         cost_history = []
-        hrp_weights = None       # last adopted HRP allocation (sums to 1)
-        traded_weights = None    # last adopted book after the vol-target overlay
-        hrp_target = None        # EMA-smoothed desired allocation (sums to 1)
-        leverage_state = None    # EMA-smoothed desired leverage
+        hrp_weights = None
+        traded_weights = None
+        hrp_target = None
+        leverage_state = None
 
         for i in range(start_idx, n_steps, self.test_window):
             train_data = returns_df.iloc[i - self.train_window : i]
@@ -67,16 +63,12 @@ class Strategy:
                 allocate(cov, corr, cfg), index=asset_prices.columns
             )
 
-            # Smooth the desired allocation toward the raw HRP target so a noisy
-            # covariance estimate does not churn the book every period.
             if hrp_target is None:
                 hrp_target = candidate_hrp
             else:
                 hrp_target = (1.0 - weight_smoothing) * hrp_target + weight_smoothing * candidate_hrp
                 hrp_target = hrp_target / hrp_target.sum()
 
-            # Volatility-target overlay: scale exposure toward a constant
-            # annualised vol (cov is already annualised), capped at max_leverage.
             leverage_raw = 1.0
             if vol_target and vol_target > 0:
                 port_vol = float(
@@ -85,9 +77,6 @@ class Strategy:
                 if port_vol > 0:
                     leverage_raw = min(vol_target / port_vol, max_leverage)
 
-            # Optional leverage smoothing. Left off by default (factor 1.0): a
-            # sweep showed a smoothed leverage is slow to de-risk into vol
-            # spikes and widens the max drawdown. Kept configurable.
             if leverage_state is None:
                 leverage_state = leverage_raw
             else:
@@ -98,8 +87,6 @@ class Strategy:
 
             candidate_traded = hrp_target * leverage_state
 
-            # Banded rebalancing: only trade when the target book has drifted
-            # enough to be worth the transaction cost.
             if traded_weights is None:
                 adopt = True
             else:
@@ -117,8 +104,6 @@ class Strategy:
             rebalance_date = returns_df.index[i]
             weight_history.append(pd.Series(hrp_weights, index=asset_prices.columns, name=rebalance_date))
 
-            # Exposure not in risky assets (or borrowed, if levered) earns / pays
-            # the risk-free rate.
             cash_weight = 1.0 - float(traded_weights.sum())
             period_returns = test_data.dot(traded_weights) + cash_weight * rf_daily
 

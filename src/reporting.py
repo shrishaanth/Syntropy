@@ -10,18 +10,6 @@ def save_artifacts(
     metrics: dict,
     config,
 ) -> dict[str, Path]:
-    """
-    Save backtest artifacts to data/outputs/.
-
-    Args:
-        results: Backtest results DataFrame.
-        weights_df: Weight history DataFrame.
-        metrics: Metrics dictionary.
-        config: Config object.
-
-    Returns:
-        Dictionary of saved file paths.
-    """
     output_dir = Path("data/outputs")
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -42,7 +42,6 @@ def test_shrink_correlation_pulls_toward_mean():
     mean_off = np.mean([0.8, 0.2, 0.3])
     shrunk = shrink_correlation(corr, 0.5)
 
-    # Diagonal is preserved, matrix stays symmetric, off-diagonals move toward the mean.
     np.testing.assert_allclose(np.diag(shrunk.values), 1.0)
     np.testing.assert_allclose(shrunk.values, shrunk.values.T)
     assert shrunk.loc["A", "B"] == pytest.approx(0.5 * 0.8 + 0.5 * mean_off)

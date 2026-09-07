@@ -15,7 +15,6 @@ from config import Config
 
 
 def _make_synthetic_with_spike():
-    """Create synthetic prices with a future spike."""
     np.random.seed(123)
     dates = pd.date_range("2020-01-01", periods=500, freq="B")
     prices = pd.DataFrame(
@@ -29,7 +28,6 @@ def _make_synthetic_with_spike():
 
 
 def test_no_lookahead_guarantee():
-    """Backtest up to pre-spike date must yield identical results whether spike exists or not."""
     prices_with_spike = _make_synthetic_with_spike()
     prices_without_spike = prices_with_spike.copy()
     spike_idx = 400
@@ -50,7 +48,6 @@ def test_no_lookahead_guarantee():
 
 
 def test_reproducibility():
-    """Same config + same data produces identical metrics."""
     prices = _make_synthetic_with_spike()
     cfg = Config()
 
