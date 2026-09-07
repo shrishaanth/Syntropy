@@ -201,9 +201,3 @@ responsive strategy.*
 ## Reproducibility
 
 `test_reproducibility` runs the full backtest twice with identical config and data, asserting the return series, weight history, and metrics are bit-identical.
-
-## Documentation
-
-- [Architecture](ARCHITECTURE.md) — component diagram, data flow, design decisions
-- [Testing](TESTING.md) — how to run tests, interpreting metrics
-- [Decisions](DECISIONS.md) — architectural decision log
