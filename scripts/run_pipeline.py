@@ -6,9 +6,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import Config
 from src.ingestion import download_and_save
 from src.core.backtest import Strategy
-from src.benchmarks import equal_weight, inverse_variance
+from src.benchmarks import benchmark_returns
 from src.metrics import calculate_metrics
-from src.reporting import save_artifacts
+from src.reporting import save_artifacts, append_history
 import pandas as pd
 import numpy as np
 
@@ -38,29 +38,25 @@ def main():
     asset_prices = prices.drop(columns=config.benchmarks, errors="ignore") if hasattr(config, 'benchmarks') else prices
     log_returns = pd.DataFrame(np.log(asset_prices / asset_prices.shift(1))).dropna()
 
-    benchmark_returns = {}
-    ew_weights = equal_weight(log_returns, config)
-    benchmark_returns["equal_weight"] = log_returns.dot(pd.Series(ew_weights))
-
-    iv_weights = inverse_variance(log_returns, config)
-    benchmark_returns["inverse_variance"] = log_returns.dot(pd.Series(iv_weights))
+    bench_returns = benchmark_returns(log_returns, config)
 
     print("\n[4/4] Calculating metrics and saving artifacts...")
     strategy_returns = results["Strategy"].dropna() if "Strategy" in results.columns else results.iloc[:, 0].dropna()
 
     metrics = calculate_metrics(
         strategy_returns,
-        {k: v.dropna() for k, v in benchmark_returns.items()},
+        {k: v.dropna() for k, v in bench_returns.items()},
         weights_df,
         config,
         costs=costs,
     )
 
     results_to_save = results.copy()
-    for name, series in benchmark_returns.items():
+    for name, series in bench_returns.items():
         results_to_save[name] = series.reindex(results_to_save.index)
 
     paths = save_artifacts(results_to_save, weights_df, metrics, config)
+    history_path = append_history(metrics, results_to_save)
 
     print("\n" + "=" * 60)
     print("PIPELINE COMPLETE")
@@ -68,6 +64,7 @@ def main():
     print(f"Results:   {paths['results']}")
     print(f"Weights:   {paths['weights']}")
     print(f"Metrics:   {paths['metrics']}")
+    print(f"History:   {history_path}")
     print(f"\nStrategy Sharpe: {metrics['strategy']['sharpe']:.3f}")
     print(f"Strategy Max DD: {metrics['strategy']['max_drawdown']:.2%}")
 

@@ -83,11 +83,15 @@ This downloads data, runs the walk-forward backtest, computes benchmarks, calcul
 streamlit run src/dashboard.py
 ```
 
-Opens an interactive web UI at `http://localhost:8501` with:
-- Cumulative return curves
-- Drawdown profiles
-- Weight evolution charts
-- Performance metrics table
+Opens an interactive web UI at `http://localhost:8501` with six tabs:
+- **Performance / Drawdown / Weights** — charts from the latest scheduled pipeline run
+- **History** — Sharpe/drawdown trend across scheduled reruns (`data/outputs/history/metrics_history.csv`), one row per day
+- **Current Targets** — what the allocator would hold *right now*, computed live from the local price cache (with a one-click refresh button)
+- **Try Your Own** — tweak vol target, leverage, rebalance band, smoothing, shrinkage, and cost assumptions with sliders, then re-run the walk-forward backtest in-process (nothing is saved to disk). Defaults to a 1-year window for a fast (~10s) iteration loop; a full-history run over the ~49-asset universe takes ~60-90s since each rebalance refits an EWM correlation matrix across the whole book — pick a longer window from the dropdown when you want it.
+
+### Keeping it fresh automatically
+
+`.github/workflows/refresh_pipeline.yml` runs the pipeline on weekday afternoons (after NSE close) and commits the refreshed `data/outputs/` summary files back to the repo, so `git pull` + reload keeps the dashboard current without anyone re-running it by hand. It also runs on manual `workflow_dispatch` from the Actions tab. `schedule` triggers only fire on the default branch per GitHub's rules, and pushing back to a protected branch needs the repo to allow the Actions bot to write directly (or the workflow adapted to open a PR instead). `config.py`'s `end_date` now defaults to *today* rather than a fixed date — a fresh `Config()` always pulls through the latest available data, which is what makes scheduling meaningful. The raw price cache (`data/processed/`) is intentionally not committed — it's ~1MB and fully regenerable in well under a minute, so committing it daily would just bloat the repo; use the dashboard's refresh button or `run_pipeline.py` to populate it locally.
 
 ## Project Structure
 
@@ -178,6 +182,13 @@ Inverse variance        0.58      14.99%       15.59%   -35.49%
 
 Strategy turnover: 0.25%    Strategy cost drag: 0.55%
 ```
+
+*Numbers below are from a run fixed to 2015-01-01–2025-01-01 for a stable,
+citable example — `end_date` now defaults to today (see "Keeping it fresh
+automatically" above), so a fresh `python scripts/run_pipeline.py` will pull
+more history and report different, evolving numbers; check
+`data/outputs/metrics.json` or the dashboard's History tab for the current
+figures.*
 
 *Backtest period: 2015-01-01 to 2025-01-01 (test window runs 2017-2024 after the
 2-year training warm-up). Universe: NIFTY 50 constituents (NSE, `.NS`) plus
