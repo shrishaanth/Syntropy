@@ -1,0 +1,2 @@
+as_of,strategy_sharpe,strategy_max_drawdown,strategy_annualized_return,strategy_annualized_volatility,strategy_turnover,strategy_cost_drag,equal_weight_sharpe,equal_weight_max_drawdown,inverse_variance_sharpe,inverse_variance_max_drawdown
+2026-09-11,0.6292724879724294,-0.13623929845001978,0.1314737498513344,0.11358155841458922,0.002754662566087429,0.006973624045590046,0.4861350753541553,-0.38001935632354616,0.46702466304950063,-0.3559502088295226

@@ -37,13 +37,22 @@ coverage.xml
 .env.local
 .env.*.local
 
-# Data artifacts
+# Data artifacts — dated raw downloads and the full price cache stay
+# ignored (large, regenerable in well under a minute via ingestion.py);
+# the small pipeline-summary outputs are tracked so the scheduled GitHub
+# Action (see .github/workflows/) can commit refreshed numbers for the
+# dashboard's History tab to read.
+# NOTE: data/outputs/ is intentionally NOT ignored as a directory — a
+# directory-level ignore blocks "!" exceptions for files inside it, so we
+# ignore by extension instead and allowlist the specific files below.
 data/raw/
 data/processed/
-data/outputs/
 *.parquet
 *.json
 *.log
+!data/outputs/backtest_results.parquet
+!data/outputs/weights_history.parquet
+!data/outputs/metrics.json
 
 # IDE
 .vscode/

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 
@@ -20,7 +20,11 @@ class Config:
         "GOLDBEES.NS",
     )
     start_date: date = date(2015, 1, 1)
-    end_date: date = date(2025, 1, 1)
+    # Defaults to "today" so a fresh Config() always pulls the latest
+    # available data. This is what makes a scheduled rerun (see
+    # .github/workflows/refresh_pipeline.yml) actually fetch new data
+    # instead of repeating the same historical window every time.
+    end_date: date = field(default_factory=date.today)
     ewma_span: int = 60
     corr_span: int = 60
     corr_shrinkage: float = 0.10
