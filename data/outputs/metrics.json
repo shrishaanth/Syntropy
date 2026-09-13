@@ -1,11 +1,11 @@
 {
   "strategy": {
-    "sharpe": 0.6292724879724294,
-    "max_drawdown": -0.13623929845001978,
-    "annualized_return": 0.1314737498513344,
-    "annualized_volatility": 0.11358155841458922,
-    "turnover": 0.002754662566087429,
-    "cost_drag": 0.006973624045590046
+    "sharpe": 0.6292725448272435,
+    "max_drawdown": -0.13623931052915236,
+    "annualized_return": 0.13147375732542374,
+    "annualized_volatility": 0.11358156002983684,
+    "turnover": 0.002754662227296454,
+    "cost_drag": 0.006973626051655663
   },
   "config": {
     "symbols": [
@@ -75,15 +75,15 @@
     "leverage_smoothing": 1.0
   },
   "equal_weight": {
-    "sharpe": 0.4861350753541553,
-    "max_drawdown": -0.38001935632354616,
-    "annualized_return": 0.14033833150040595,
-    "annualized_volatility": 0.1652592778702061
+    "sharpe": 0.48613505050842504,
+    "max_drawdown": -0.3800193561425715,
+    "annualized_return": 0.14033832728088555,
+    "annualized_volatility": 0.1652592776366641
   },
   "inverse_variance": {
-    "sharpe": 0.46702466304950063,
-    "max_drawdown": -0.3559502088295226,
-    "annualized_return": 0.131117161797017,
-    "annualized_volatility": 0.15227710102641662
+    "sharpe": 0.4670246396679959,
+    "max_drawdown": -0.35595019399490563,
+    "annualized_return": 0.13111715538937208,
+    "annualized_volatility": 0.15227709492999913
   }
 }
