@@ -1,0 +1,47 @@
+name: Refresh portfolio pipeline
+
+# Runs the pipeline against the latest data and commits the refreshed
+# summary artifacts (data/outputs/) so the Streamlit dashboard always
+# reflects a recent run without anyone having to trigger it by hand.
+#
+# NOTE: `schedule` triggers only fire on the default branch (main), per
+# GitHub's own rules — this workflow does nothing on schedule until it's
+# merged there. `workflow_dispatch` can be run manually from any branch
+# via the Actions tab in the meantime.
+
+on:
+  schedule:
+    # 12:00 UTC = 17:30 IST — well after NSE close (15:30 IST), before
+    # Yahoo Finance data has a chance to still be settling. Weekdays only.
+    - cron: "0 12 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        run: python scripts/run_pipeline.py
+
+      - name: Commit refreshed outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/outputs/metrics.json \
+                  data/outputs/backtest_results.parquet \
+                  data/outputs/weights_history.parquet \
+                  data/outputs/history/metrics_history.csv
+          git diff --cached --quiet || git commit -m "Scheduled pipeline refresh $(date -u +'%Y-%m-%d')"
+          git push
