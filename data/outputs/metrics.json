@@ -1,20 +1,11 @@
 {
   "strategy": {
-<<<<<<< HEAD
-    "sharpe": 0.6292724879724294,
-    "max_drawdown": -0.13623929845001978,
-    "annualized_return": 0.1314737498513344,
-    "annualized_volatility": 0.11358155841458922,
-    "turnover": 0.002754662566087429,
-    "cost_drag": 0.006973624045590046
-=======
-    "sharpe": 0.6179814039873015,
-    "max_drawdown": -0.13623930274172005,
-    "annualized_return": 0.13020351560004984,
-    "annualized_volatility": 0.1136013400194359,
-    "turnover": 0.0027546635523435646,
-    "cost_drag": 0.007032390921875399
->>>>>>> 28a975b777bb7f440cce6e1ed4f959094f6aa579
+    "sharpe": 0.6240028744567933,
+    "max_drawdown": -0.13623929851933234,
+    "annualized_return": 0.13084959510722965,
+    "annualized_volatility": 0.11354049477561402,
+    "turnover": 0.0027546634026545305,
+    "cost_drag": 0.006989189226760783
   },
   "config": {
     "symbols": [
@@ -70,11 +61,7 @@
       "GOLDBEES.NS"
     ],
     "start_date": "2015-01-01",
-<<<<<<< HEAD
-    "end_date": "2026-09-13",
-=======
-    "end_date": "2026-09-18",
->>>>>>> 28a975b777bb7f440cce6e1ed4f959094f6aa579
+    "end_date": "2026-09-21",
     "ewma_span": 60,
     "corr_span": 60,
     "corr_shrinkage": 0.1,
@@ -88,28 +75,15 @@
     "leverage_smoothing": 1.0
   },
   "equal_weight": {
-<<<<<<< HEAD
-    "sharpe": 0.4861350753541553,
-    "max_drawdown": -0.38001935632354616,
-    "annualized_return": 0.14033833150040595,
-    "annualized_volatility": 0.1652592778702061
+    "sharpe": 0.4832242634579257,
+    "max_drawdown": -0.3800193497622022,
+    "annualized_return": 0.13980229808239486,
+    "annualized_volatility": 0.16514546995495236
   },
   "inverse_variance": {
-    "sharpe": 0.46702466304950063,
-    "max_drawdown": -0.3559502088295226,
-    "annualized_return": 0.131117161797017,
-    "annualized_volatility": 0.15227710102641662
-=======
-    "sharpe": 0.4797945674494507,
-    "max_drawdown": -0.3800193490008286,
-    "annualized_return": 0.13927417362013486,
-    "annualized_volatility": 0.16522524221470455
-  },
-  "inverse_variance": {
-    "sharpe": 0.4618350919189517,
-    "max_drawdown": -0.355945810884693,
-    "annualized_return": 0.130306344496743,
-    "annualized_volatility": 0.15223257332961856
->>>>>>> 28a975b777bb7f440cce6e1ed4f959094f6aa579
+    "sharpe": 0.46391344919550753,
+    "max_drawdown": -0.3559570952791909,
+    "annualized_return": 0.13058909668301893,
+    "annualized_volatility": 0.15216005659122517
   }
 }
