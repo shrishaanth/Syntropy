@@ -1,11 +1,11 @@
 {
   "strategy": {
-    "sharpe": 0.5805889965336446,
-    "max_drawdown": -0.1362393042743073,
-    "annualized_return": 0.12598999208317832,
-    "annualized_volatility": 0.11366042497733467,
-    "turnover": 0.002730457810511753,
-    "cost_drag": 0.007226836048441042
+    "sharpe": 0.587198290177152,
+    "max_drawdown": -0.13623930150287603,
+    "annualized_return": 0.12672890443038445,
+    "annualized_volatility": 0.11363947332042296,
+    "turnover": 0.002730457873019506,
+    "cost_drag": 0.00717906569104829
   },
   "config": {
     "symbols": [
@@ -61,7 +61,7 @@
       "GOLDBEES.NS"
     ],
     "start_date": "2015-01-01",
-    "end_date": "2026-10-07",
+    "end_date": "2026-10-08",
     "ewma_span": 60,
     "corr_span": 60,
     "corr_shrinkage": 0.1,
@@ -75,15 +75,15 @@
     "leverage_smoothing": 1.0
   },
   "equal_weight": {
-    "sharpe": 0.4589701633621577,
-    "max_drawdown": -0.3800193662082912,
-    "annualized_return": 0.1357591983085259,
-    "annualized_volatility": 0.1650634493396183
+    "sharpe": 0.46276784414293887,
+    "max_drawdown": -0.3800193523931457,
+    "annualized_return": 0.13636670932745446,
+    "annualized_volatility": 0.16502164161576102
   },
   "inverse_variance": {
-    "sharpe": 0.43925270470763655,
-    "max_drawdown": -0.35597161593749527,
-    "annualized_return": 0.12681344580583376,
-    "annualized_volatility": 0.15210707888595543
+    "sharpe": 0.44334276892870833,
+    "max_drawdown": -0.35600369477536736,
+    "annualized_return": 0.12742211659437755,
+    "annualized_volatility": 0.15207672554871268
   }
 }
